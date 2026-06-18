@@ -1,0 +1,7 @@
+name = "link-shortener"
+pages_build_output_dir = "."
+compatibility_date = "2026-06-17"
+
+[[kv_namespaces]]
+binding = "SHORT_LINKS"
+id = "020e584758f048cfa3699ecfd553b09a"
