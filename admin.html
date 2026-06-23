@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Short Links</title>
+<style>
+:root { --ink:#111; --paper:#fff; --mid:#767676; --line:#ddd; --bg:#f5f5f5; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--paper); color:var(--ink); padding:28px 16px 64px; }
+.wrap { max-width:960px; margin:0 auto; }
+
+.hdr { margin-bottom:24px; }
+.hdr h1 { font-size:20px; font-weight:700; letter-spacing:-.01em; }
+.hdr p  { font-size:12px; color:var(--mid); margin-top:3px; }
+
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px; }
+@media(max-width:540px){.cards{grid-template-columns:repeat(2,1fr);}}
+.card { background:var(--bg); border-radius:8px; padding:14px; }
+.clabel { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--mid); }
+.cval   { font-size:28px; font-weight:700; letter-spacing:-.02em; margin-top:4px; }
+
+.sec { margin-bottom:24px; }
+.sec-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--mid); margin-bottom:10px; }
+
+.creator { display:flex; gap:8px; flex-wrap:wrap; }
+.creator input { padding:9px 12px; font-size:14px; border:2px solid var(--line); border-radius:6px; font-family:inherit; color:var(--ink); background:var(--paper); }
+.creator input:focus { outline:none; border-color:var(--ink); }
+.inp-code { width:140px; font-family:ui-monospace,monospace; font-size:13px; }
+.inp-url  { flex:1; min-width:180px; }
+.btn-create { padding:9px 16px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; background:var(--ink); color:var(--paper); border:none; border-radius:6px; cursor:pointer; font-family:inherit; }
+.btn-create:active { opacity:.8; }
+.btn-create:disabled { opacity:.5; cursor:default; }
+.creator-msg { margin-top:8px; font-size:13px; }
+
+.chart-bars   { display:flex; gap:3px; height:64px; align-items:flex-end; }
+.bar-col      { flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
+.bar-fill     { width:100%; background:var(--ink); border-radius:2px 2px 0 0; min-height:1px; }
+.chart-labels { display:flex; gap:3px; margin-top:3px; }
+.chart-labels span { flex:1; text-align:center; font-size:8px; color:var(--mid); }
+
+.tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; padding:7px 8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--mid); border-bottom:2px solid var(--line); white-space:nowrap; }
+td { padding:8px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+.td-code { font-family:ui-monospace,monospace; font-weight:700; white-space:nowrap; }
+.td-url  { max-width:200px; }
+.url-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; color:var(--ink); text-decoration:none; font-size:13px; }
+.url-txt:hover { text-decoration:underline; }
+.url-inp { display:none; width:100%; padding:4px 7px; font-size:12px; border:2px solid var(--ink); border-radius:4px; font-family:inherit; }
+.td-dt  { font-size:12px; color:var(--mid); white-space:nowrap; }
+.td-exp { font-size:12px; white-space:nowrap; }
+.acts   { display:flex; gap:4px; }
+.btn { padding:4px 8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; border:2px solid var(--ink); background:transparent; color:var(--ink); border-radius:4px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.btn:hover  { background:var(--ink); color:var(--paper); }
+.btn:active { opacity:.8; }
+.empty-row { padding:24px; text-align:center; color:var(--mid); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <h1>Short Links — Admin</h1>
+    <p>Session tab close karne par end ho jata hai.</p>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="clabel">Total Links</div><div class="cval" id="sTotal">—</div></div>
+    <div class="card"><div class="clabel">Today</div><div class="cval" id="sToday">—</div></div>
+    <div class="card"><div class="clabel">This Week</div><div class="cval" id="sWeek">—</div></div>
+    <div class="card"><div class="clabel">This Month</div><div class="cval" id="sMonth">—</div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Custom Short Link (1 year validity)</div>
+    <div class="creator">
+      <input class="inp-code" id="cCode" placeholder="apna-code" maxlength="80" spellcheck="false" autocapitalize="off">
+      <input class="inp-url"  id="cUrl"  placeholder="https://..." type="text" spellcheck="false" autocapitalize="off">
+      <button class="btn-create" id="cBtn" onclick="createCustom()">Create</button>
+    </div>
+    <div class="creator-msg" id="cMsg"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Links generated — last 14 days</div>
+    <div class="chart-bars"   id="chartBars"></div>
+    <div class="chart-labels" id="chartLabels"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">All Links (<span id="linkCount">…</span>)</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>Code</th><th>Destination URL</th><th>Created</th><th>Expires</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" class="empty-row">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+'use strict';
+let links = [];
+
+/* ── Load ────────────────────────── */
+async function load() {
+  try {
+    const r = await fetch('/admin/api/links');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    links = await r.json();
+    links.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderStats(); renderChart(); renderTable();
+  } catch(e) {
+    document.getElementById('tbody').innerHTML =
+      `<tr><td colspan="5" class="empty-row">Load failed: ${e.message}</td></tr>`;
+  }
+}
+
+/* ── Stats ───────────────────────── */
+function renderStats() {
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  const wk  = new Date(tod); wk.setDate(tod.getDate() - 6);
+  const mon = new Date(tod); mon.setDate(1);
+  const ts  = (d) => d.getTime() / 1000;
+  const n   = (from) => links.filter(l => l.createdAt && l.createdAt >= ts(from)).length;
+  document.getElementById('sTotal').textContent = links.length;
+  document.getElementById('sToday').textContent = n(tod);
+  document.getElementById('sWeek').textContent  = n(wk);
+  document.getElementById('sMonth').textContent = n(mon);
+}
+
+/* ── Chart ───────────────────────── */
+function renderChart() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const keys = [], counts = {};
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    keys.push(k); counts[k] = 0;
+  }
+  links.forEach(l => {
+    if (!l.createdAt) return;
+    const k = new Date(l.createdAt * 1000).toISOString().slice(0, 10);
+    if (k in counts) counts[k]++;
+  });
+  const max = Math.max(1, ...Object.values(counts));
+  document.getElementById('chartBars').innerHTML = keys.map(k => {
+    const h = Math.max(1, Math.round(counts[k] / max * 64));
+    return `<div class="bar-col"><div class="bar-fill" style="height:${h}px" title="${k}: ${counts[k]} links"></div></div>`;
+  }).join('');
+  document.getElementById('chartLabels').innerHTML = keys.map(k =>
+    `<span>${k.slice(8)}</span>`
+  ).join('');
+}
+
+/* ── Table ───────────────────────── */
+function renderTable() {
+  document.getElementById('linkCount').textContent = links.length;
+  if (!links.length) {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="5" class="empty-row">Koi link nahi mila.</td></tr>';
+    return;
+  }
+  document.getElementById('tbody').innerHTML = links.map(l => {
+    const c = esc(l.code), u = esc(l.url || '');
+    return `<tr id="r-${c}">
+  <td class="td-code"><a href="/m/${c}" target="_blank" style="color:inherit;text-decoration:none">/m/${c}</a></td>
+  <td class="td-url"><a class="url-txt" href="${u}" target="_blank" title="${u}">${u}</a><input class="url-inp" value="${u}"></td>
+  <td class="td-dt">${l.createdAt ? fmt(l.createdAt) : '—'}</td>
+  <td class="td-exp" id="exp-${c}">${l.expiresAt ? fmt(l.expiresAt) : '—'}</td>
+  <td class="acts">
+    <button class="btn" data-a="edit" data-c="${c}">Edit</button>
+    <button class="btn" data-a="save" data-c="${c}" style="display:none">Save</button>
+    <button class="btn" data-a="yr1"  data-c="${c}">+1yr</button>
+    <button class="btn" data-a="yr-1" data-c="${c}">−1yr</button>
+    <button class="btn" data-a="del"  data-c="${c}">Del</button>
+  </td></tr>`;
+  }).join('');
+}
+
+/* ── Table events (delegation) ───── */
+document.getElementById('tbody').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-a]');
+  if (!btn) return;
+  const code = btn.dataset.c, a = btn.dataset.a;
+  const row  = document.getElementById('r-' + code);
+
+  if (a === 'edit') {
+    row.querySelector('.url-txt').style.display = 'none';
+    row.querySelector('.url-inp').style.display = 'block';
+    row.querySelector('.url-inp').focus();
+    row.querySelector('[data-a="edit"]').style.display = 'none';
+    row.querySelector('[data-a="save"]').style.display = '';
+
+  } else if (a === 'save') {
+    const val = row.querySelector('.url-inp').value.trim();
+    if (!val) return;
+    const ok = await call('PUT', code, { url: val });
+    if (ok) {
+      const l = links.find(l => l.code === code);
+      if (l) l.url = val;
+      const txt = row.querySelector('.url-txt');
+      txt.href = val; txt.title = val; txt.textContent = val;
+      txt.style.display = '';
+      row.querySelector('.url-inp').style.display = 'none';
+      row.querySelector('[data-a="edit"]').style.display = '';
+      row.querySelector('[data-a="save"]').style.display = 'none';
+    }
+
+  } else if (a === 'yr1' || a === 'yr-1') {
+    const data = await call('PUT', code, { addYears: a === 'yr1' ? 1 : -1 }, true);
+    if (data && data.expiresAt) {
+      const l = links.find(l => l.code === code);
+      if (l) l.expiresAt = data.expiresAt;
+      document.getElementById('exp-' + code).textContent = fmt(data.expiresAt);
+    }
+
+  } else if (a === 'del') {
+    if (!confirm(`/m/${code} permanently delete karein?`)) return;
+    const ok = await call('DELETE', code);
+    if (ok) {
+      links = links.filter(l => l.code !== code);
+      row.remove();
+      renderStats();
+      document.getElementById('linkCount').textContent = links.length;
+    }
+  }
+});
+
+/* ── Custom creator ──────────────── */
+async function createCustom() {
+  const code = document.getElementById('cCode').value.trim();
+  const url  = document.getElementById('cUrl').value.trim();
+  const msg  = document.getElementById('cMsg');
+  msg.textContent = '';
+  if (!code || !url) { msg.textContent = '⚠ Code aur URL dono chahiye.'; return; }
+  const btn = document.getElementById('cBtn');
+  btn.disabled = true;
+  const r = await fetch('/admin/api/links', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, url })
+  });
+  const data = await r.json();
+  btn.disabled = false;
+  if (!r.ok) {
+    msg.textContent = '✗ ' + data.error;
+  } else {
+    msg.textContent = '✓ Created: ' + location.origin + '/m/' + code;
+    document.getElementById('cCode').value = '';
+    document.getElementById('cUrl').value = '';
+    load();
+  }
+}
+
+/* ── Helpers ─────────────────────── */
+async function call(method, code, body, returnJson) {
+  try {
+    const opts = { method, headers: {} };
+    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    const r = await fetch('/admin/api/link/' + encodeURIComponent(code), opts);
+    if (!r.ok) { const d = await r.json(); alert(d.error || 'Error'); return null; }
+    return returnJson ? r.json() : true;
+  } catch(e) { alert('Network error: ' + e.message); return null; }
+}
+
+function fmt(ts) {
+  return new Date(ts * 1000).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+load();
+</script>
+</body>
+</html>
