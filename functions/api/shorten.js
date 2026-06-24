@@ -1,67 +1,41 @@
-export async function onRequestPost(context) {
-  const { request, env } = context;
-
+export async function onRequestPost({ request, env }) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "Invalid request body" }, 400);
-  }
+  try { body = await request.json(); }
+  catch { return res({ error: "Invalid body" }, 400); }
 
   let url = (body.url || "").trim();
-  if (!url) {
-    return jsonResponse({ error: "URL chahiye" }, 400);
-  }
-
-  // https:// missing ho to add kar dein
-  if (!/^https?:\/\//i.test(url)) {
-    url = "https://" + url;
-  }
-
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return jsonResponse({ error: "Invalid URL" }, 400);
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return jsonResponse({ error: "Invalid URL" }, 400);
-  }
+  if (!url) return res({ error: "URL chahiye" }, 400);
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try { new URL(url); } catch { return res({ error: "Invalid URL" }, 400); }
 
   let code;
-  try {
-    code = await generateUniqueCode(env.SHORT_LINKS);
-  } catch {
-    return jsonResponse({ error: "Try again later" }, 500);
-  }
+  try { code = await uniqueCode(env.SHORT_LINKS); }
+  catch { return res({ error: "Try again later" }, 500); }
 
-  // 1 saal (365 din) ke liye store karein
-  await env.SHORT_LINKS.put(code, url, { expirationTtl: 31536000 });
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + 31536000;
+  await env.SHORT_LINKS.put(
+    code,
+    JSON.stringify({ url, createdAt: now, expiresAt }),
+    { expiration: expiresAt }
+  );
 
-  const shortUrl = new URL(request.url).origin + "/m/" + code;
-  return jsonResponse({ shortUrl, code });
+  return res({ shortUrl: new URL(request.url).origin + "/m/" + code, code });
 }
 
-function jsonResponse(data, status = 200) {
+function res(data, status = 200) {
   return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" }
+    status, headers: { "Content-Type": "application/json" }
   });
 }
 
-async function generateUniqueCode(kv) {
-  const lower = "abcdefghijklmnopqrstuvwxyz";
-  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
+async function uniqueCode(kv) {
+  const lo = "abcdefghijklmnopqrstuvwxyz";
+  const up = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const r  = (n) => Math.floor(Math.random() * n);
   for (let i = 0; i < 20; i++) {
-    const digit = Math.floor(Math.random() * 10);      // 0-9
-    const l = lower[Math.floor(Math.random() * 26)];   // a-z
-    const u = upper[Math.floor(Math.random() * 26)];   // A-Z
-    const num = Math.floor(Math.random() * 89) + 11;   // 11-99
-    const code = `${digit}${l}${u}${num}`;
-
-    const exists = await kv.get(code);
-    if (!exists) return code;
+    const code = `${r(10)}${lo[r(26)]}${up[r(26)]}${r(89) + 11}`;
+    if (!await kv.get(code)) return code;
   }
-  throw new Error("No code available");
+  throw new Error("Exhausted");
 }
