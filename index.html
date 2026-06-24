@@ -1,229 +1,691 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Short Links</title>
-<style>
-  :root {
-    --ink: #111111;
-    --paper: #ffffff;
-    --mid: #6e6e6e;
-    --line: #dddddd;
-    --surface: #f6f6f6;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lnk. — Short links that last</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #F5F5F3;
+      --surface:     #FFFFFF;
+      --ink:         #0F0F0E;
+      --muted:       #89897F;
+      --border:      #E3E2DE;
+      --accent:      #1E4FFF;
+      --accent-dark: #1540E0;
+      --accent-bg:   #ECF0FF;
+      --success:     #059669;
+      --success-bg:  #ECFDF5;
+      --error:       #DC2626;
+      --error-bg:    #FEF2F2;
+      --sh-sm:       0 1px 4px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --sh-md:       0 4px 20px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
+      --sh-accent:   0 4px 24px rgba(30,79,255,.2);
+      --r:           14px;
+      --r-sm:        10px;
+    }
 
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
 
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh;
-    padding: 72px 24px;
-  }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  .wrap { width: 100%; max-width: 420px; margin: 0 auto; }
+    /* ── NAV ── */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(245,245,243,.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 640px; margin: 0 auto;
+      padding: 0 24px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--ink); text-decoration: none;
+    }
+    .logo-dot { color: var(--accent); }
+    .nav-badge {
+      font-size: 12px; font-weight: 600;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px; padding: 5px 12px;
+    }
 
-  .kicker {
-    margin: 0 0 10px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--mid);
-  }
+    /* ── PAGE ── */
+    .page { max-width: 640px; margin: 0 auto; padding: 0 24px; }
 
-  h1 {
-    margin: 0 0 32px;
-    font-size: 28px;
-    line-height: 1.25;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
+    /* ── HERO ── */
+    .hero { padding: 60px 0 36px; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+    }
+    .hero-tag-dot {
+      width: 6px; height: 6px;
+      background: var(--accent); border-radius: 50%;
+    }
+    h1 {
+      font-size: clamp(32px, 5vw, 50px);
+      font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hero-em { color: var(--accent); }
+    .hero-sub {
+      font-size: 16px; line-height: 1.65;
+      color: var(--muted); max-width: 360px;
+    }
 
-  .sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    white-space: nowrap;
-    border: 0;
-  }
+    /* ── FORM CARD ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh-sm);
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .form-card:focus-within {
+      box-shadow: var(--sh-accent);
+      border-color: rgba(30,79,255,.25);
+    }
 
-  .form { display: flex; flex-direction: column; gap: 12px; }
+    /* URL input */
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+    }
+    .url-input {
+      width: 100%;
+      padding: 15px 16px 15px 42px;
+      font-family: inherit; font-size: 15px;
+      color: var(--ink); background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      outline: none; caret-color: var(--accent);
+      transition: border-color .15s, background .15s;
+    }
+    .url-input::placeholder { color: var(--muted); }
+    .url-input:focus { border-color: var(--accent); background: #fff; }
 
-  input[type="text"] {
-    width: 100%;
-    padding: 14px 16px;
-    font-size: 16px;
-    border: 2px solid var(--line);
-    border-radius: 8px;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: inherit;
-  }
+    /* Alias toggle */
+    .alias-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      color: var(--muted); background: none; border: none;
+      cursor: pointer; padding: 2px 0;
+      transition: color .15s;
+    }
+    .alias-toggle:hover { color: var(--accent); }
+    .plus-icon {
+      width: 17px; height: 17px;
+      border: 1.5px solid currentColor; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 15px; line-height: 1; font-weight: 400;
+      transition: transform .2s, background .15s, color .15s, border-color .15s;
+    }
+    .alias-toggle.open .plus-icon {
+      transform: rotate(45deg);
+      background: var(--accent-bg);
+      color: var(--accent); border-color: var(--accent);
+    }
 
-  input[type="text"]::placeholder { color: var(--mid); }
+    /* Alias field */
+    .alias-field {
+      display: flex; align-items: stretch;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden; background: var(--bg);
+      transition: border-color .15s;
+      animation: popDown .18s ease;
+    }
+    .alias-field:focus-within { border-color: var(--accent); }
+    .alias-pre {
+      display: flex; align-items: center;
+      padding: 0 10px 0 14px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      background: rgba(0,0,0,.04);
+      border-right: 1.5px solid var(--border);
+      white-space: nowrap; user-select: none;
+    }
+    .alias-input {
+      flex: 1; min-width: 0;
+      padding: 13px 14px;
+      font-family: inherit; font-size: 14px;
+      font-weight: 600; color: var(--accent);
+      background: transparent; border: none; outline: none;
+    }
+    .alias-input::placeholder { color: var(--muted); font-weight: 400; }
 
-  input[type="text"]:focus {
-    outline: none;
-    border-color: var(--ink);
-    box-shadow: 0 0 0 3px rgba(17,17,17,0.1);
-  }
+    /* Shorten button */
+    .shorten-btn {
+      font-family: inherit; font-size: 15px;
+      font-weight: 700; letter-spacing: .01em;
+      color: #fff; background: var(--accent);
+      border: none; border-radius: var(--r-sm);
+      padding: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s, opacity .15s;
+    }
+    .shorten-btn:hover:not(:disabled) { background: var(--accent-dark); }
+    .shorten-btn:active:not(:disabled) { transform: scale(.98); }
+    .shorten-btn:disabled { opacity: .55; cursor: default; }
+    .shorten-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  button { font-family: inherit; cursor: pointer; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-  #shortenBtn {
-    padding: 14px 16px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    border-radius: 8px;
-    transition: opacity 0.15s;
-  }
+    /* Error */
+    .error-card {
+      margin-top: 10px; padding: 13px 16px;
+      background: var(--error-bg);
+      border: 1px solid rgba(220,38,38,.2);
+      border-radius: var(--r-sm);
+      font-size: 14px; color: var(--error);
+      display: flex; align-items: flex-start; gap: 8px;
+      animation: popDown .2s ease;
+    }
 
-  #shortenBtn:active { opacity: 0.8; }
-  #shortenBtn:disabled { opacity: 0.5; cursor: default; }
-  #shortenBtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    /* Result card */
+    .result-card {
+      margin-top: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh-md);
+      overflow: hidden;
+      animation: popDown .28s cubic-bezier(.16,1,.3,1);
+    }
 
-  .error {
-    margin: 14px 0 0;
-    font-size: 14px;
-    color: var(--ink);
-    border-left: 3px solid var(--ink);
-    padding-left: 10px;
-  }
+    @keyframes popDown {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-  .result {
-    margin-top: 22px;
-    padding: 16px;
-    background: var(--surface);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    animation: rise 0.25s ease;
-  }
+    .result-head {
+      padding: 13px 20px;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--success-bg);
+      border-bottom: 1px solid rgba(5,150,105,.12);
+    }
+    .check-circle {
+      width: 20px; height: 20px;
+      background: var(--success); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-status { font-size: 13px; font-weight: 600; color: var(--success); }
 
-  .result code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    overflow-wrap: anywhere;
-  }
+    .result-body { padding: 20px 20px 14px; }
+    .result-url-row {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 14px;
+    }
+    .result-url {
+      font-size: clamp(17px, 3.5vw, 23px);
+      font-weight: 700; letter-spacing: -0.02em;
+      color: var(--accent); text-decoration: none;
+      word-break: break-all; line-height: 1.2; flex: 1;
+    }
+    .result-url:hover { text-decoration: underline; }
 
-  #copyBtn {
-    flex-shrink: 0;
-    padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: transparent;
-    color: var(--ink);
-    border: 2px solid var(--ink);
-    border-radius: 6px;
-  }
+    .copy-btn {
+      font-family: inherit; font-size: 13px;
+      font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--accent); background: var(--accent-bg);
+      border: 1.5px solid rgba(30,79,255,.18);
+      border-radius: 8px; padding: 9px 18px;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .copy-btn:hover { background: #dde4ff; }
+    .copy-btn.done {
+      color: var(--success); background: var(--success-bg);
+      border-color: rgba(5,150,105,.2);
+    }
 
-  #copyBtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .result-foot {
+      padding: 10px 20px 16px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    }
+    .result-meta { font-size: 13px; color: var(--muted); }
 
-  .footer { margin-top: 30px; font-size: 12px; color: var(--mid); }
+    .icon-btn {
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      color: var(--muted); background: var(--bg);
+      border: 1px solid var(--border); border-radius: 7px;
+      padding: 6px 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .icon-btn:hover { color: var(--ink); border-color: #bbb; }
+    .icon-btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
 
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+    /* QR panel */
+    .qr-panel {
+      padding: 20px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      animation: popDown .2s ease;
+    }
+    .qr-img {
+      width: 172px; height: 172px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg); display: block;
+    }
+    .qr-dl {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-decoration: none; display: flex; align-items: center; gap: 4px;
+      transition: color .15s;
+    }
+    .qr-dl:hover { color: var(--ink); }
 
-  @media (prefers-reduced-motion: reduce) {
-    .result { animation: none; }
-    #shortenBtn { transition: none; }
-  }
-</style>
+    /* History */
+    .history { margin-top: 36px; padding-bottom: 72px; }
+    .history-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .h-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 13px 16px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 12px;
+      transition: border-color .15s;
+    }
+    .h-row:hover { border-color: #ccc; }
+    .h-info { flex: 1; min-width: 0; }
+    .h-short {
+      font-size: 14px; font-weight: 600;
+      color: var(--accent); text-decoration: none;
+      display: block; margin-bottom: 2px;
+    }
+    .h-short:hover { text-decoration: underline; }
+    .h-long {
+      font-size: 12px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .h-copy {
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      color: var(--muted); background: none;
+      border: 1px solid var(--border); border-radius: 7px;
+      padding: 6px 12px; cursor: pointer; flex-shrink: 0;
+      transition: color .15s, border-color .15s;
+    }
+    .h-copy:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .page, .nav-inner { padding-left: 16px; padding-right: 16px; }
+      .hero { padding-top: 40px; }
+      h1 { font-size: 30px; }
+      .result-url { font-size: 17px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, .result-card, .error-card, .alias-field, .qr-panel {
+        animation: none !important; transition: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main class="wrap">
-    <p class="kicker">Short links &middot; 365 days</p>
-    <h1>Paste a link.<br>Get a short one.</h1>
 
-    <form id="shortenForm" class="form">
-      <label for="urlInput" class="sr-only">Link to shorten</label>
-      <input type="text" id="urlInput" placeholder="Paste your link" autocomplete="off" autocapitalize="off" spellcheck="false" required>
-      <button type="submit" id="shortenBtn">Shorten</button>
-    </form>
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo">lnk<span class="logo-dot">.</span></a>
+    <span class="nav-badge">Free &middot; 365 days</span>
+  </div>
+</nav>
 
-    <p id="errorMsg" class="error" role="alert" hidden></p>
+<div class="page">
 
-    <div id="result" class="result" hidden>
-      <code id="resultLink"></code>
-      <button id="copyBtn" type="button">Copy</button>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-tag">
+      <span class="hero-tag-dot"></span>
+      URL Shortener
+    </div>
+    <h1>Short links.<br><span class="hero-em">One year</span>, every time.</h1>
+    <p class="hero-sub">Paste any URL — get a clean, short link that stays alive for a full 365 days.</p>
+  </section>
+
+  <!-- FORM -->
+  <div class="form-card">
+
+    <div class="input-wrap">
+      <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      <input type="text" id="urlInput" class="url-input"
+        placeholder="Paste your long URL here"
+        autocomplete="off" autocapitalize="off" spellcheck="false" />
     </div>
 
-    <p class="footer">Links expire automatically after 365 days.</p>
-  </main>
+    <button type="button" class="alias-toggle" id="aliasToggle">
+      <span class="plus-icon">+</span>
+      Custom ending
+    </button>
+
+    <div id="aliasField" class="alias-field" hidden>
+      <span class="alias-pre" id="aliasPrefix">yourdomain.com/m/</span>
+      <input type="text" id="aliasInput" class="alias-input"
+        placeholder="my-link" maxlength="20"
+        autocomplete="off" autocapitalize="off" spellcheck="false" />
+    </div>
+
+    <button type="button" class="shorten-btn" id="shortenBtn">
+      <span id="btnLabel">Shorten &rarr;</span>
+    </button>
+  </div>
+
+  <!-- ERROR -->
+  <div id="errorCard" class="error-card" hidden>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span id="errorText"></span>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultCard" class="result-card" hidden>
+
+    <div class="result-head">
+      <div class="check-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+          fill="none" stroke="white" stroke-width="3.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <span class="result-status">Your link is ready</span>
+    </div>
+
+    <div class="result-body">
+      <div class="result-url-row">
+        <a id="resultUrl" class="result-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+        <button id="copyBtn" class="copy-btn" type="button">Copy</button>
+      </div>
+    </div>
+
+    <div class="result-foot">
+      <span class="result-meta" id="resultMeta"></span>
+      <button type="button" class="icon-btn" id="qrBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect width="5" height="5" x="3" y="3" rx="1"/>
+          <rect width="5" height="5" x="16" y="3" rx="1"/>
+          <rect width="5" height="5" x="3" y="16" rx="1"/>
+          <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+          <path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/>
+          <path d="M3 12h.01"/><path d="M12 3h.01"/>
+          <path d="M12 16v.01"/><path d="M16 12h1"/>
+          <path d="M21 12v.01"/><path d="M12 21v-1"/>
+        </svg>
+        <span id="qrLabel">QR Code</span>
+      </button>
+    </div>
+
+    <div id="qrPanel" class="qr-panel" hidden>
+      <img id="qrImage" class="qr-img" src="" alt="QR code" loading="lazy" />
+      <a id="qrDl" class="qr-dl" href="#" download="qr-code.png">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PNG
+      </a>
+    </div>
+
+  </div>
+
+  <!-- HISTORY -->
+  <section id="historySection" class="history" hidden>
+    <div class="history-label">Recent links</div>
+    <div id="historyList" class="history-list"></div>
+  </section>
+
+</div><!-- /page -->
 
 <script>
-  const form = document.getElementById('shortenForm');
-  const input = document.getElementById('urlInput');
-  const btn = document.getElementById('shortenBtn');
-  const errorMsg = document.getElementById('errorMsg');
-  const result = document.getElementById('result');
-  const resultLink = document.getElementById('resultLink');
-  const copyBtn = document.getElementById('copyBtn');
+  // ── Refs ────────────────────────────────────────────────────
+  const urlInput       = document.getElementById('urlInput');
+  const aliasToggle    = document.getElementById('aliasToggle');
+  const aliasField     = document.getElementById('aliasField');
+  const aliasInput     = document.getElementById('aliasInput');
+  const aliasPrefix    = document.getElementById('aliasPrefix');
+  const shortenBtn     = document.getElementById('shortenBtn');
+  const btnLabel       = document.getElementById('btnLabel');
+  const errorCard      = document.getElementById('errorCard');
+  const errorText      = document.getElementById('errorText');
+  const resultCard     = document.getElementById('resultCard');
+  const resultUrl      = document.getElementById('resultUrl');
+  const copyBtn        = document.getElementById('copyBtn');
+  const resultMeta     = document.getElementById('resultMeta');
+  const qrBtn          = document.getElementById('qrBtn');
+  const qrLabel        = document.getElementById('qrLabel');
+  const qrPanel        = document.getElementById('qrPanel');
+  const qrImage        = document.getElementById('qrImage');
+  const qrDl           = document.getElementById('qrDl');
+  const historySection = document.getElementById('historySection');
+  const historyList    = document.getElementById('historyList');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorMsg.hidden = true;
-    result.hidden = true;
+  // ── Set alias prefix from current domain ───────────────────
+  aliasPrefix.textContent = location.hostname + '/m/';
 
-    const url = input.value.trim();
-    if (!url) return;
+  // ── Alias toggle ────────────────────────────────────────────
+  aliasToggle.addEventListener('click', () => {
+    const isOpen = !aliasField.hidden;
+    aliasField.hidden = isOpen;
+    aliasToggle.classList.toggle('open', !isOpen);
+    if (!isOpen) aliasInput.focus();
+    else aliasInput.value = '';
+  });
 
-    btn.disabled = true;
-    btn.textContent = 'Shortening…';
+  // ── Keyboard shortcuts ──────────────────────────────────────
+  urlInput.addEventListener('keydown',   e => { if (e.key === 'Enter') shorten(); });
+  aliasInput.addEventListener('keydown', e => { if (e.key === 'Enter') shorten(); });
+  shortenBtn.addEventListener('click', shorten);
+
+  // ── Core shorten logic ──────────────────────────────────────
+  let qrVisible = false;
+
+  async function shorten() {
+    const url   = urlInput.value.trim();
+    const alias = aliasInput.value.trim();
+
+    if (!url) { urlInput.focus(); return showError('Please paste a URL first.'); }
+
+    clearResult();
+    setLoading(true);
 
     try {
-      const res = await fetch('/api/shorten', {
+      const res  = await fetch('/api/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, ...(alias && { alias }) }),
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        errorMsg.textContent = data.error || 'Something went wrong. Try again.';
-        errorMsg.hidden = false;
-      } else {
-        resultLink.textContent = data.shortUrl;
-        result.hidden = false;
-        copyBtn.textContent = 'Copy';
-      }
-    } catch {
-      errorMsg.textContent = 'Network error. Try again.';
-      errorMsg.hidden = false;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Shorten';
-    }
-  });
+      if (!res.ok) { showError(data.error || 'Something went wrong — please try again.'); return; }
 
+      renderResult(data);
+      saveHistory({ ...data, originalUrl: url });
+
+    } catch {
+      showError('Network error — check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function setLoading(on) {
+    shortenBtn.disabled = on;
+    if (on) {
+      btnLabel.textContent = 'Shortening';
+      const s = document.createElement('div');
+      s.className = 'spinner'; s.id = '_sp';
+      shortenBtn.appendChild(s);
+    } else {
+      document.getElementById('_sp')?.remove();
+      btnLabel.innerHTML = 'Shorten &rarr;';
+    }
+  }
+
+  function clearResult() {
+    errorCard.hidden = true;
+    resultCard.hidden = true;
+    qrPanel.hidden = true;
+    qrVisible = false;
+    qrLabel.textContent = 'QR Code';
+    qrBtn.classList.remove('on');
+  }
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorCard.hidden = false;
+  }
+
+  function renderResult(data) {
+    resultUrl.textContent = data.shortUrl;
+    resultUrl.href = data.shortUrl;
+    copyBtn.textContent = 'Copy';
+    copyBtn.classList.remove('done');
+
+    const exp = new Date(data.expiresAt * 1000);
+    resultMeta.textContent =
+      'Expires ' + exp.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // Preload QR image
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=344x344&format=png&data=${encodeURIComponent(data.shortUrl)}`;
+    qrImage.src = qrSrc;
+    qrDl.href   = qrSrc;
+
+    resultCard.hidden = false;
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Copy ────────────────────────────────────────────────────
   copyBtn.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(resultLink.textContent);
-      copyBtn.textContent = 'Copied';
-      setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      await navigator.clipboard.writeText(resultUrl.textContent);
+      copyBtn.textContent = 'Copied!';
+      copyBtn.classList.add('done');
+      setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('done'); }, 2000);
     } catch {
       copyBtn.textContent = 'Failed';
     }
   });
+
+  // ── QR toggle ───────────────────────────────────────────────
+  qrBtn.addEventListener('click', () => {
+    qrVisible = !qrVisible;
+    qrPanel.hidden = !qrVisible;
+    qrBtn.classList.toggle('on', qrVisible);
+    qrLabel.textContent = qrVisible ? 'Hide QR' : 'QR Code';
+  });
+
+  // Cross-origin download fallback
+  qrDl.addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      const blob = await (await fetch(qrImage.src)).blob();
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob), download: 'qr-code.png'
+      });
+      a.click(); URL.revokeObjectURL(a.href);
+    } catch { window.open(qrImage.src, '_blank'); }
+  });
+
+  // ── History (localStorage) ──────────────────────────────────
+  const STORE = 'lnk_v2';
+  const MAX   = 10;
+
+  function saveHistory(entry) {
+    const list = loadHistory().filter(h => h.code !== entry.code);
+    list.unshift(entry);
+    localStorage.setItem(STORE, JSON.stringify(list.slice(0, MAX)));
+    renderHistory();
+  }
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(STORE) || '[]'); }
+    catch { return []; }
+  }
+
+  function renderHistory() {
+    const now  = Date.now() / 1000;
+    const list = loadHistory().filter(h => !h.expiresAt || h.expiresAt > now);
+
+    historySection.hidden = list.length === 0;
+    historyList.innerHTML = '';
+
+    list.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'h-row';
+      row.innerHTML = `
+        <div class="h-info">
+          <a class="h-short" href="${item.shortUrl}" target="_blank" rel="noopener">${item.shortUrl}</a>
+          <span class="h-long" title="${item.originalUrl}">${item.originalUrl}</span>
+        </div>
+        <button class="h-copy" data-url="${item.shortUrl}" type="button">Copy</button>
+      `;
+      historyList.appendChild(row);
+    });
+
+    historyList.querySelectorAll('.h-copy').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.url);
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+        } catch { btn.textContent = '!'; }
+      });
+    });
+  }
+
+  // ── Init ────────────────────────────────────────────────────
+  renderHistory();
+  urlInput.focus();
 </script>
 </body>
 </html>
